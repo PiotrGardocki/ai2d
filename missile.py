@@ -10,5 +10,8 @@ class Missile:
     def update(self, dt):
         self.rect.y += self.speed * dt
 
+    def get_rect(self):
+        return self.rect
+
     def draw(self, screen):
         pygame.draw.rect(screen, "blue", self.rect)

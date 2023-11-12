@@ -1,6 +1,8 @@
 import pygame
 from player import Player
 from missile import Missile
+from objects_manager import ObjectsManager
+
 
 pygame.init()
 screen = pygame.display.set_mode((720, 720))
@@ -13,7 +15,11 @@ missile1 = Missile((10, 10))
 missile2 = Missile((40, 10))
 missile3 = Missile((70, 10))
 
-objects = [player, missile1, missile2, missile3]
+objects = ObjectsManager()
+objects.add_player(player)
+objects.add_enemy_object(missile1)
+objects.add_enemy_object(missile2)
+objects.add_enemy_object(missile3)
 
 while running:
     for event in pygame.event.get():
@@ -22,10 +28,13 @@ while running:
 
     screen.fill("cyan2")
 
-    for object in objects:
-        object.update(dt)
-    for object in objects:
-        object.draw(screen)
+    objects.update(dt)
+
+    if objects.does_player_collide():
+        running = False
+        print("You failed")
+
+    objects.draw(screen)
 
     pygame.display.flip()
 

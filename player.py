@@ -23,5 +23,8 @@ class Player:
         if self.rect.right > self.screen_size[0]:
             self.rect.right = self.screen_size[0]
 
+    def get_rect(self):
+        return self.rect
+
     def draw(self, screen):
         pygame.draw.rect(screen, "red", self.rect)
