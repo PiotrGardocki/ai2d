@@ -1,0 +1,14 @@
+import pygame
+
+
+class Missile:
+    speed = 250
+
+    def __init__(self, position) -> None:
+        self.rect = pygame.Rect(position, (20, 20))
+
+    def update(self, dt):
+        self.rect.y += self.speed * dt
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, "blue", self.rect)
