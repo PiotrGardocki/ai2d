@@ -1,13 +1,13 @@
 import pygame
+from player import Player
 
 pygame.init()
-screen = pygame.display.set_mode((1280, 720))
+screen = pygame.display.set_mode((720, 720))
 clock = pygame.time.Clock()
 running = True
 dt = 0
-player_speed = 300
 
-player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
+player = Player(screen.get_size())
 
 while running:
     for event in pygame.event.get():
@@ -16,17 +16,8 @@ while running:
 
     screen.fill("blue")
 
-    pygame.draw.circle(screen, "red", player_pos, 40)
-
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_w]:
-        player_pos.y -= player_speed * dt
-    if keys[pygame.K_s]:
-        player_pos.y += player_speed * dt
-    if keys[pygame.K_a]:
-        player_pos.x -= player_speed * dt
-    if keys[pygame.K_d]:
-        player_pos.x += player_speed * dt
+    player.update(dt)
+    player.draw(screen)
 
     pygame.display.flip()
 
