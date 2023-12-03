@@ -2,17 +2,18 @@ import itertools
 
 
 class ObjectsManager():
-    enemy_objects = []
-    player = None
+    def __init__(self) -> None:
+        self.__enemy_objects = []
+        self.__player = None
 
     def add_player(self, player):
-        self.player = player
+        self.__player = player
 
     def add_enemy_object(self, enemy_object):
-        self.enemy_objects.append(enemy_object)
+        self.__enemy_objects.append(enemy_object)
 
     def __all_objects(self):
-        return itertools.chain(self.enemy_objects, (self.player,))
+        return itertools.chain(self.__enemy_objects, (self.__player,))
 
     def update(self, dt):
         for object in self.__all_objects():
@@ -23,6 +24,6 @@ class ObjectsManager():
             object.draw(screen)
 
     def does_player_collide(self):
-        enemies_rects = [enemy.get_rect() for enemy in self.enemy_objects]
+        enemies_rects = [enemy.get_rect() for enemy in self.__enemy_objects]
 
-        return self.player.get_rect().collidelist(enemies_rects) != -1
+        return self.__player.get_rect().collidelist(enemies_rects) != -1
