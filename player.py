@@ -1,4 +1,8 @@
 import pygame
+from enum import Enum
+
+
+PlayerAction = Enum('PlayerAction', ('STAY', 'LEFT', 'RIGHT'))
 
 
 class Player:
@@ -10,13 +14,12 @@ class Player:
                                           screen_size[1] - self.rect.height)
         self.screen_size = screen_size
 
-    def update(self, dt):
-        keys = pygame.key.get_pressed()
-
-        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            self.rect.x -= self.speed * dt
-        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            self.rect.x += self.speed * dt
+    def update(self, dt, action):
+        match action:
+            case PlayerAction.LEFT:
+                self.rect.x -= self.speed * dt
+            case PlayerAction.RIGHT:
+                self.rect.x += self.speed * dt
 
         if self.rect.left < 0:
             self.rect.left = 0

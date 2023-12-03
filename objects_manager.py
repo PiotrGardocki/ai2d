@@ -1,4 +1,5 @@
 import itertools
+from player import PlayerAction
 
 
 class ObjectsManager():
@@ -15,9 +16,10 @@ class ObjectsManager():
     def __all_objects(self):
         return itertools.chain(self.__enemy_objects, (self.__player,))
 
-    def update(self, dt):
-        for object in self.__all_objects():
+    def update(self, dt, player_action=PlayerAction.STAY):
+        for object in self.__enemy_objects:
             object.update(dt)
+        self.__player.update(dt, player_action)
 
     def draw(self, screen):
         for object in self.__all_objects():
