@@ -32,6 +32,10 @@ class SpaceInvaders2Env(gym.Env):
         self.__clock = None
         self.__canvas = None
 
+        self.__enemies_spawn_interval = 1.5
+        self.__time_since_last_spawn = 0
+        self.__enemies_to_spawn = 3
+
     @staticmethod
     def create_human_game():
         env = SpaceInvaders2Env("human")
@@ -54,18 +58,11 @@ class SpaceInvaders2Env(gym.Env):
 
         self.__running = True
         self.__dt = 0
+        self.__time_since_last_spawn = self.__enemies_spawn_interval
 
         player = Player((self.window_size, self.window_size))
-        missile1 = Missile((10, 10))
-        missile2 = Missile((40, 10))
-        missile3 = Missile((70, 10))
-
         objects = ObjectsManager(self.__window.get_rect())
         objects.add_player(player)
-        objects.add_enemy_object(missile1)
-        objects.add_enemy_object(missile2)
-        objects.add_enemy_object(missile3)
-
         self.__objects = objects
 
         if self.render_mode == "human":
@@ -76,12 +73,25 @@ class SpaceInvaders2Env(gym.Env):
 
         return observation, info
 
+    def __spawn_random_enemies(self):
+        left_limit = 10
+        right_limit = self.window_size - 10
+
+        for _ in range(self.__enemies_to_spawn):
+            x = self.np_random.integers(left_limit, right_limit)
+            self.__objects.add_enemy_object(Missile((x, 10)))
+
     def __frame_step(self, action):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.__running = False
 
         self.__objects.update(self.__dt, action)
+
+        self.__time_since_last_spawn += self.__dt
+        if self.__time_since_last_spawn > self.__enemies_spawn_interval:
+            self.__time_since_last_spawn -= self.__enemies_spawn_interval
+            self.__spawn_random_enemies()
 
         if self.__objects.does_player_collide():
             self.__running = False
