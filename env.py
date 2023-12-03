@@ -60,7 +60,7 @@ class SpaceInvaders2Env(gym.Env):
         missile2 = Missile((40, 10))
         missile3 = Missile((70, 10))
 
-        objects = ObjectsManager()
+        objects = ObjectsManager(self.__window.get_rect())
         objects.add_player(player)
         objects.add_enemy_object(missile1)
         objects.add_enemy_object(missile2)
