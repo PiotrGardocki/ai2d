@@ -61,12 +61,11 @@ class SpaceInvaders2Env(gym.Env):
         self.__time_since_last_spawn = self.__enemies_spawn_interval
 
         player = Player((self.window_size, self.window_size))
-        objects = ObjectsManager(self.__window.get_rect())
+        objects = ObjectsManager(pygame.Rect(0, 0, self.window_size, self.window_size))
         objects.add_player(player)
         self.__objects = objects
 
-        if self.render_mode == "human":
-            self.__render_frame()
+        self.__render_frame()
 
         observation = self.__get_state()
         info = self.__get_info()
