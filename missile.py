@@ -14,4 +14,4 @@ class Missile:
         return self.rect
 
     def draw(self, screen):
-        pygame.draw.rect(screen, "blue", self.rect)
+        pygame.draw.rect(screen, pygame.Color(0, 0, 255), self.rect)

@@ -1,8 +1,12 @@
-import gymnasium as gym
-from gymnasium import spaces
-from gymnasium.envs.registration import register
+# import gymnasium as gym
+# from gymnasium import spaces
+# from gymnasium.envs.registration import register
+import gym
+from gym import spaces
+from gym.envs.registration import register
 import pygame
 import numpy as np
+import random
 
 from objects_manager import ObjectsManager
 from player import Player, PlayerAction
@@ -10,19 +14,26 @@ from missile import Missile
 
 
 class SpaceInvaders2Env(gym.Env):
-    metadata = {"render_modes": ["human", "rgb_array"]}
+    metadata = {"render_modes": ["human", "rgb_array", "simple_array"]}
     window_size = 720
-    fps_limit = 60
+    observation_size = window_size // 10
+    observation_shape = (observation_size, observation_size)
+    fps_limit = 10
 
     def __init__(self, render_mode=None):
-        shape = (self.window_size, self.window_size, 3)
-        self.observation_space = spaces.Box(0, 255, shape, np.uint8)
-        self.action_space = spaces.Discrete(3)
+        if render_mode == "simple_array":
+            shape = (self.observation_size, self.observation_size)
+            self.observation_space = spaces.Box(0, 255, shape, np.float32)
+        else:
+            shape = (self.observation_size, self.observation_size, 3)
+            self.observation_space = spaces.Box(0, 255, shape, np.float32)
+
+        self.action_space = spaces.Discrete(2)
 
         self.__action_mapping = {
-            0: PlayerAction.STAY,
-            1: PlayerAction.LEFT,
-            2: PlayerAction.RIGHT,
+            #0: PlayerAction.STAY,
+            0: PlayerAction.LEFT,
+            1: PlayerAction.RIGHT,
         }
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
@@ -32,9 +43,11 @@ class SpaceInvaders2Env(gym.Env):
         self.__clock = None
         self.__canvas = None
 
-        self.__enemies_spawn_interval = 1.5
-        self.__time_since_last_spawn = 0
-        self.__enemies_to_spawn = 3
+        self.__enemies_spawn_interval = 1.0
+        self.__time_since_last_spawn = self.__enemies_spawn_interval
+        self.__enemies_to_spawn = 5
+        self.__timeout = 20
+        self.__timeout_reached = False
 
     @staticmethod
     def create_human_game():
@@ -43,13 +56,23 @@ class SpaceInvaders2Env(gym.Env):
         return env
 
     def __get_state(self):
+        new_canvas = pygame.Surface(self.observation_shape)
+        pygame.transform.scale(self.__canvas, self.observation_shape, new_canvas)
+
+        if self.render_mode == "simple_array":
+            return pygame.surfarray.pixels3d(new_canvas).transpose(1, 0, 2)[:, :, 2].astype('float32')
+        else:
+            return pygame.surfarray.pixels3d(new_canvas).transpose(1, 0, 2)
+            #return self.__get_frame_as_array().astype('float32')
+
+    def __get_frame_as_array(self):
         return pygame.surfarray.pixels3d(self.__canvas).transpose(1, 0, 2)
 
     def __get_info(self):
         return {}
 
     def reset(self, seed=None, options=None):
-        super().reset(seed=seed)
+        #super().reset(seed=seed)
         pygame.init()
 
         if self.render_mode == "human":
@@ -59,26 +82,34 @@ class SpaceInvaders2Env(gym.Env):
         self.__running = True
         self.__dt = 0
         self.__time_since_last_spawn = self.__enemies_spawn_interval
+        self.__timeout = 20
+        self.__timeout_reached = False
 
         player = Player((self.window_size, self.window_size))
         objects = ObjectsManager(pygame.Rect(0, 0, self.window_size, self.window_size))
         objects.add_player(player)
         self.__objects = objects
 
+        self.__spawn_random_enemies(200)
+
         self.__render_frame()
 
         observation = self.__get_state()
         info = self.__get_info()
 
-        return observation, info
+        return observation #, info
 
-    def __spawn_random_enemies(self):
+    def __spawn_random_enemies(self, height=10):
         left_limit = 10
         right_limit = self.window_size - 10
 
         for _ in range(self.__enemies_to_spawn):
-            x = self.np_random.integers(left_limit, right_limit)
-            self.__objects.add_enemy_object(Missile((x, 10)))
+            #x = self.np_random.integers(left_limit, right_limit)
+            x = random.randint(left_limit, right_limit)
+            self.__objects.add_enemy_object(Missile((x, height)))
+
+        self.__objects.add_enemy_object(Missile((left_limit, height)))
+        self.__objects.add_enemy_object(Missile((right_limit, height)))
 
     def __frame_step(self, action):
         for event in pygame.event.get():
@@ -100,6 +131,11 @@ class SpaceInvaders2Env(gym.Env):
         else:
             self.__dt = 1 / self.fps_limit
 
+        self.__timeout -= self.__dt
+        if self.__timeout < 0:
+            self.__running = False
+            self.__timeout_reached = True
+
     def run_human_game(self):
         assert self.render_mode == "human"
 
@@ -117,12 +153,18 @@ class SpaceInvaders2Env(gym.Env):
 
         self.close()
 
-    def step(self, action):
+    def step(self, action=0):
         if self.__running:
             self.__frame_step(self.__action_mapping[action])
 
         terminated = not self.__running
-        reward = 0 if terminated else 1
+        if self.__timeout_reached:
+            reward = 0
+        elif terminated:
+            reward = -10
+        else:
+            reward = 1
+        #reward = 0 if terminated else 1
 
         if self.render_mode == "human":
             self.__render_frame()
@@ -130,9 +172,11 @@ class SpaceInvaders2Env(gym.Env):
         observation = self.__get_state()
         info = self.__get_info()
 
-        return observation, reward, terminated, False, info
+        #return observation, reward, terminated, False, info
+        return observation, reward, terminated, info
 
-    def render(self):
+    def render(self, mode, **kwargs):
+        #print(mode, self.render_mode, kwargs)
         if self.render_mode == "rgb_array":
             return self.__render_frame()
 
@@ -140,7 +184,8 @@ class SpaceInvaders2Env(gym.Env):
         canvas = pygame.Surface((self.window_size, self.window_size))
         self.__canvas = canvas
 
-        canvas.fill("cyan2")
+        #canvas.fill("cyan2")
+        canvas.fill("cyan4")
         self.__objects.draw(canvas)
 
         if self.render_mode == "human":
@@ -148,7 +193,7 @@ class SpaceInvaders2Env(gym.Env):
             pygame.event.pump()
             pygame.display.flip()
         else:
-            self.__get_state()
+            return self.__get_frame_as_array()
 
     def close(self):
         self.__objects = None
@@ -158,6 +203,6 @@ class SpaceInvaders2Env(gym.Env):
 
 
 register(
-     id="games/SpaceInvaders2",
+     id="games/SpaceInvaders-v2",
      entry_point="env:SpaceInvaders2Env",
 )

@@ -30,4 +30,4 @@ class Player:
         return self.rect
 
     def draw(self, screen):
-        pygame.draw.rect(screen, "red", self.rect)
+        pygame.draw.rect(screen, pygame.Color(0, 0, 0), self.rect)
